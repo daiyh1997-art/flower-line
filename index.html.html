@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flower Line of Action</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --panel: rgba(255,255,255,.86);
+      --text: #1f2a24;
+      --muted: #68736c;
+      --accent: #456a52;
+      --accent-2: #d9e4da;
+      --danger: #a34e4e;
+      --shadow: 0 20px 60px rgba(31,42,36,.14);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(196,214,195,.45), transparent 34%),
+        radial-gradient(circle at 90% 90%, rgba(229,205,192,.42), transparent 32%),
+        var(--bg);
+    }
+    .app {
+      width: min(1320px, 100%);
+      margin: 0 auto;
+      padding: 24px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    h1 { margin: 0; font-size: clamp(28px, 4vw, 50px); letter-spacing: -.04em; }
+    .subtitle { margin-top: 8px; color: var(--muted); }
+    .source-note { font-size: 13px; color: var(--muted); text-align: right; }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 20px;
+    }
+    .viewer, .controls {
+      background: var(--panel);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .viewer { overflow: hidden; min-height: 72vh; display: flex; flex-direction: column; }
+    .image-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 520px;
+      background: #dde2dc;
+      overflow: hidden;
+    }
+    .image-wrap a { display: block; width: 100%; height: 100%; }
+    #flowerImage {
+      width: 100%; height: 100%; object-fit: contain; display: block;
+      background: #ebe8e1; transition: opacity .22s ease;
+    }
+    .loading {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      color: var(--muted); background: linear-gradient(120deg,#e6e9e2,#f3efe8,#e6e9e2);
+      background-size: 220% 100%; animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer { to { background-position: -220% 0; } }
+    .timer-ring {
+      position: absolute; top: 18px; right: 18px;
+      width: 82px; height: 82px; border-radius: 50%;
+      background: rgba(25,34,29,.75); color: white;
+      display: grid; place-items: center; font-weight: 700; font-size: 25px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    }
+    .timer-ring small { display: block; font-size: 10px; font-weight: 500; opacity: .75; text-align: center; margin-top: -3px; }
+    .meta { padding: 18px 22px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .names h2 { margin: 0; font-size: 24px; }
+    .latin { color: var(--muted); font-style: italic; margin-top: 4px; }
+    .links { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+    a.btn, button {
+      border: 0; border-radius: 12px; padding: 12px 16px;
+      font: inherit; font-weight: 650; cursor: pointer; text-decoration: none;
+      transition: transform .12s ease, opacity .12s ease, background .12s ease;
+    }
+    a.btn:hover, button:hover { transform: translateY(-1px); }
+    .primary { background: var(--accent); color: white; }
+    .secondary { background: var(--accent-2); color: var(--text); }
+    .ghost { background: #f2f0eb; color: var(--text); }
+    .controls { padding: 20px; align-self: start; position: sticky; top: 18px; }
+    .section { padding: 15px 0; border-bottom: 1px solid #e4e5df; }
+    .section:first-child { padding-top: 0; }
+    .section:last-child { border-bottom: 0; padding-bottom: 0; }
+    .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 10px; }
+    .preset-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .preset { padding: 10px 7px; background: #f0efe9; }
+    .preset.active { background: var(--accent); color: white; }
+    .custom-row { display: grid; grid-template-columns: 1fr 82px; gap: 8px; margin-top: 8px; }
+    input, select {
+      width: 100%; border: 1px solid #d5d8d1; background: white; border-radius: 10px;
+      padding: 10px; font: inherit; color: var(--text);
+    }
+    .big-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .big-actions button { min-height: 48px; }
+    .status { margin-top: 10px; min-height: 38px; font-size: 13px; color: var(--muted); line-height: 1.45; }
+    .toggles label { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0; }
+    .toggles input { width: auto; }
+    .progress { height: 7px; background: #e4e6df; border-radius: 99px; overflow: hidden; margin-top: 12px; }
+    .progress > div { height: 100%; width: 100%; background: var(--accent); transform-origin: left; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background:#eceae4; border-radius:6px; padding:2px 6px; font-size:12px; }
+    .error { color: var(--danger); }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .controls { position: static; }
+      .viewer { min-height: auto; }
+      .image-wrap { min-height: 56vh; }
+      header { align-items: flex-start; flex-direction: column; }
+      .source-note { text-align: left; }
+    }
+    @media (max-width: 520px) {
+      .app { padding: 12px; }
+      .meta { align-items: flex-start; flex-direction: column; }
+      .links { justify-content: flex-start; }
+      .timer-ring { width: 68px; height: 68px; font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>Flower Line of Action</h1>
+        <div class="subtitle">随机花卉写生练习 · 自动计时 · 点击图片查看物种介绍</div>
+      </div>
+      <div class="source-note">图片与物种信息来自 iNaturalist<br>点击图片将打开对应物种页面</div>
+    </header>
+
+    <div class="layout">
+      <section class="viewer">
+        <div class="image-wrap">
+          <a id="imageLink" href="#" target="_blank" rel="noopener noreferrer" title="查看物种介绍">
+            <img id="flowerImage" alt="随机花卉参考图" />
+          </a>
+          <div id="loading" class="loading">正在寻找一朵花……</div>
+          <div class="timer-ring"><div><span id="timer">60</span><small>SECONDS</small></div></div>
+        </div>
+        <div class="meta">
+          <div class="names">
+            <h2 id="commonName">随机花卉</h2>
+            <div id="latinName" class="latin">等待载入</div>
+          </div>
+          <div class="links">
+            <a id="taxonLink" class="btn secondary" href="#" target="_blank" rel="noopener noreferrer">物种介绍 ↗</a>
+            <a id="observationLink" class="btn ghost" href="#" target="_blank" rel="noopener noreferrer">原始观察 ↗</a>
+          </div>
+        </div>
+      </section>
+
+      <aside class="controls">
+        <div class="section">
+          <div class="section-title">练习时间</div>
+          <div class="preset-grid" id="presetGrid">
+            <button class="preset" data-seconds="30">30秒</button>
+            <button class="preset active" data-seconds="60">1分钟</button>
+            <button class="preset" data-seconds="120">2分钟</button>
+            <button class="preset" data-seconds="300">5分钟</button>
+            <button class="preset" data-seconds="600">10分钟</button>
+            <button class="preset" data-seconds="1200">20分钟</button>
+          </div>
+          <div class="custom-row">
+            <input id="customTime" type="number" min="5" max="7200" value="180" aria-label="自定义秒数" />
+            <button id="applyCustom" class="ghost">应用</button>
+          </div>
+          <div class="progress"><div id="progressBar"></div></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">控制</div>
+          <div class="big-actions">
+            <button id="playPause" class="primary">开始</button>
+            <button id="next" class="secondary">下一朵</button>
+          </div>
+          <div style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <button id="restart" class="ghost">重新计时</button>
+            <button id="fullscreen" class="ghost">全屏</button>
+          </div>
+          <div class="status" id="status">按“开始”进入自动练习。</div>
+        </div>
+
+        <div class="section toggles">
+          <div class="section-title">显示选项</div>
+          <label><span>自动切换下一朵</span><input id="autoNext" type="checkbox" checked /></label>
+          <label><span>显示花名</span><input id="showNames" type="checkbox" checked /></label>
+          <label><span>优先研究级照片</span><input id="researchOnly" type="checkbox" checked /></label>
+        </div>
+
+        <div class="section">
+          <div class="section-title">快捷键</div>
+          <div class="status">
+            <span class="kbd">Space</span> 开始/暂停　
+            <span class="kbd">→</span> 下一张<br>
+            <span class="kbd">R</span> 重新计时　
+            <span class="kbd">F</span> 全屏
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+<script>
+(() => {
+  const API = 'https://api.inaturalist.org/v1/observations';
+  const els = {
+    image: document.getElementById('flowerImage'), imageLink: document.getElementById('imageLink'),
+    loading: document.getElementById('loading'), timer: document.getElementById('timer'),
+    progress: document.getElementById('progressBar'), common: document.getElementById('commonName'),
+    latin: document.getElementById('latinName'), taxonLink: document.getElementById('taxonLink'),
+    obsLink: document.getElementById('observationLink'), playPause: document.getElementById('playPause'),
+    next: document.getElementById('next'), restart: document.getElementById('restart'),
+    fullscreen: document.getElementById('fullscreen'), autoNext: document.getElementById('autoNext'),
+    showNames: document.getElementById('showNames'), researchOnly: document.getElementById('researchOnly'),
+    status: document.getElementById('status'), custom: document.getElementById('customTime'),
+    applyCustom: document.getElementById('applyCustom')
+  };
+
+  let duration = 60, remaining = 60, running = false, tick = null;
+  let pool = [], recentIds = [];
+
+  const fmt = s => s >= 60 ? `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}` : String(s);
+  const setStatus = (text, error=false) => {
+    els.status.textContent = text;
+    els.status.classList.toggle('error', error);
+  };
+  const updateTimer = () => {
+    els.timer.textContent = fmt(remaining);
+    els.progress.style.transform = `scaleX(${Math.max(0, remaining / duration)})`;
+    document.title = running ? `${fmt(remaining)} · Flower Line of Action` : 'Flower Line of Action';
+  };
+
+  function setDuration(seconds) {
+    duration = Math.max(5, Number(seconds) || 60);
+    remaining = duration;
+    document.querySelectorAll('.preset').forEach(b => b.classList.toggle('active', Number(b.dataset.seconds) === duration));
+    updateTimer();
+  }
+
+  function normalizePhoto(url) {
+    if (!url) return '';
+    return url.replace(/square\.(jpg|jpeg|png)$/i, 'large.$1').replace(/small\.(jpg|jpeg|png)$/i, 'large.$1');
+  }
+
+  function validObservation(o) {
+    return o && o.id && o.taxon && o.photos && o.photos.length && o.photos[0].url;
+  }
+
+  async function refillPool() {
+    const page = Math.floor(Math.random() * 20) + 1;
+    const params = new URLSearchParams({
+      taxon_name: 'Angiospermae',
+      photos: 'true',
+      captive: 'false',
+      per_page: '100',
+      page: String(page),
+      order_by: 'votes',
+      order: 'desc'
+    });
+    if (els.researchOnly.checked) params.set('quality_grade', 'research');
+    const response = await fetch(`${API}?${params.toString()}`);
+    if (!response.ok) throw new Error(`API ${response.status}`);
+    const data = await response.json();
+    pool = (data.results || []).filter(validObservation);
+    if (!pool.length) throw new Error('没有找到可用照片');
+    pool.sort(() => Math.random() - .5);
+  }
+
+  async function loadNextFlower() {
+    els.loading.style.display = 'grid';
+    els.image.style.opacity = '0';
+    setStatus('正在寻找下一朵花……');
+    try {
+      if (pool.length < 5) await refillPool();
+      let obs;
+      do { obs = pool.pop(); } while (obs && recentIds.includes(obs.id) && pool.length);
+      if (!obs) throw new Error('照片池为空');
+      recentIds.push(obs.id); if (recentIds.length > 15) recentIds.shift();
+
+      const taxon = obs.taxon;
+      const photo = obs.photos[Math.floor(Math.random() * obs.photos.length)];
+      const imageUrl = normalizePhoto(photo.url);
+      const taxonUrl = `https://www.inaturalist.org/taxa/${taxon.id}`;
+      const observationUrl = `https://www.inaturalist.org/observations/${obs.id}`;
+      const commonName = taxon.preferred_common_name || taxon.name || '未知花卉';
+      const latinName = taxon.name || '';
+
+      await new Promise((resolve, reject) => {
+        const img = new Image(); img.onload = resolve; img.onerror = reject; img.src = imageUrl;
+      });
+
+      els.image.src = imageUrl;
+      els.image.alt = `${commonName}（${latinName}）花卉参考图`;
+      els.imageLink.href = taxonUrl;
+      els.taxonLink.href = taxonUrl;
+      els.obsLink.href = observationUrl;
+      els.common.textContent = commonName;
+      els.latin.textContent = latinName;
+      els.image.style.opacity = '1';
+      els.loading.style.display = 'none';
+      remaining = duration;
+      updateTimer();
+      setStatus(`已载入：${commonName}。点击图片查看介绍。`);
+      localStorage.setItem('flowerPracticeLast', JSON.stringify({imageUrl, taxonUrl, observationUrl, commonName, latinName}));
+    } catch (err) {
+      const cached = localStorage.getItem('flowerPracticeLast');
+      if (cached) {
+        const c = JSON.parse(cached);
+        els.image.src = c.imageUrl; els.imageLink.href = c.taxonUrl; els.taxonLink.href = c.taxonUrl;
+        els.obsLink.href = c.observationUrl; els.common.textContent = c.commonName; els.latin.textContent = c.latinName;
+        els.image.style.opacity = '1'; els.loading.style.display = 'none';
+        setStatus('网络连接失败，暂时显示上次缓存的花卉。', true);
+      } else {
+        els.loading.textContent = '无法连接图片来源，请检查网络后再试。';
+        setStatus(`载入失败：${err.message}`, true);
+      }
+    }
+  }
+
+  function start() {
+    if (running) return;
+    running = true; els.playPause.textContent = '暂停'; setStatus('练习进行中。');
+    tick = setInterval(async () => {
+      remaining -= 1; updateTimer();
+      if (remaining <= 0) {
+        clearInterval(tick); running = false; els.playPause.textContent = '开始';
+        if (els.autoNext.checked) { await loadNextFlower(); start(); }
+        else { remaining = 0; updateTimer(); setStatus('本轮完成。'); }
+      }
+    }, 1000);
+  }
+  function pause() { running = false; clearInterval(tick); els.playPause.textContent = '继续'; setStatus('已暂停。'); }
+  function toggle() { running ? pause() : start(); }
+  function restart() { remaining = duration; updateTimer(); setStatus(running ? '已重新计时。' : '计时已重置。'); }
+
+  document.getElementById('presetGrid').addEventListener('click', e => {
+    const b = e.target.closest('[data-seconds]'); if (b) setDuration(b.dataset.seconds);
+  });
+  els.applyCustom.addEventListener('click', () => setDuration(els.custom.value));
+  els.playPause.addEventListener('click', toggle);
+  els.next.addEventListener('click', loadNextFlower);
+  els.restart.addEventListener('click', restart);
+  els.fullscreen.addEventListener('click', () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen());
+  els.showNames.addEventListener('change', () => document.querySelector('.meta').style.display = els.showNames.checked ? 'flex' : 'none');
+  els.researchOnly.addEventListener('change', () => { pool = []; loadNextFlower(); });
+  document.addEventListener('keydown', e => {
+    if (['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    if (e.key === 'ArrowRight') loadNextFlower();
+    if (e.key.toLowerCase() === 'r') restart();
+    if (e.key.toLowerCase() === 'f') els.fullscreen.click();
+  });
+
+  updateTimer();
+  loadNextFlower();
+})();
+</script>
+</body>
+</html>

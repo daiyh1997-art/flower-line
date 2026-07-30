@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f3f0e7">
+<title>Flower Line of Action</title>
+<style>
+:root{
+  --bg:#f3f0e7;--card:#fffdf8;--ink:#172019;--muted:#737a73;
+  --accent:#425f4c;--line:#d8d8cf;--danger:#a04343
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",Arial,sans-serif
+}
+.wrap{width:min(1120px,100%);margin:auto;padding:18px}
+h1{font-size:clamp(28px,5vw,50px);line-height:1;margin:0 0 9px}
+.sub{color:var(--muted)}
+.toolbar{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;margin:16px 0
+}
+.control{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:10px
+}
+label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
+select,input{
+  width:100%;padding:10px;border:1px solid var(--line);
+  border-radius:10px;background:#fff;color:var(--ink);font:inherit
+}
+.stage{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:22px;overflow:hidden;
+  box-shadow:0 12px 35px rgba(25,35,25,.08)
+}
+.image-wrap{
+  position:relative;height:min(68vh,740px);min-height:420px;
+  background:#e8e7df;display:grid;place-items:center
+}
+.image-wrap img{width:100%;height:100%;object-fit:contain;display:block}
+.image-wrap.cover img{object-fit:cover}
+.status{
+  position:absolute;inset:0;display:grid;place-items:center;
+  text-align:center;padding:30px;background:#ecebe4;color:var(--muted)
+}
+.hidden{display:none!important}
+.timer{
+  position:absolute;top:16px;right:16px;width:112px;height:112px;
+  border-radius:50%;display:grid;place-items:center;text-align:center;
+  background:rgba(23,32,25,.86);color:#fff;backdrop-filter:blur(8px)
+}
+.timer strong{display:block;font-size:29px;line-height:1}
+.timer span{font-size:11px;letter-spacing:.12em}
+.progress{
+  position:absolute;left:0;bottom:0;height:5px;width:100%;
+  background:var(--accent);transform-origin:left
+}
+.info{
+  padding:18px 20px;display:flex;justify-content:space-between;
+  gap:18px;align-items:center
+}
+.info h2{margin:0 0 5px;font-size:clamp(23px,4vw,34px)}
+.info p{margin:3px 0;color:var(--muted)}
+.links,.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn,.linkbtn{
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:12px;padding:11px 14px;text-decoration:none;
+  font:inherit;cursor:pointer
+}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.actions{
+  display:grid;grid-template-columns:repeat(6,minmax(0,1fr));
+  margin-top:12px
+}
+.tip{text-align:center;color:var(--muted);font-size:13px;margin:14px 0 4px}
+.error{color:var(--danger)}
+.counter{font-size:12px;color:var(--muted);margin-top:5px}
+@media(max-width:760px){
+  .toolbar{grid-template-columns:1fr 1fr}
+  .toolbar .control:last-child{grid-column:1/-1}
+  .actions{grid-template-columns:1fr 1fr 1fr}
+  .info{display:block}
+  .links{margin-top:12px}
+  .image-wrap{height:58vh;min-height:380px}
+  .timer{width:90px;height:90px;top:12px;right:12px}
+  .timer strong{font-size:24px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Flower Line of Action</h1>
+  <div class="sub">所有花卉 · 纯在线动态图库 · 自动减少重复</div>
+</header>
+
+<section class="toolbar">
+  <div class="control">
+    <label for="duration">练习时间</label>
+    <select id="duration">
+      <option value="30">30 秒</option>
+      <option value="60" selected>1 分钟</option>
+      <option value="120">2 分钟</option>
+      <option value="300">5 分钟</option>
+      <option value="600">10 分钟</option>
+      <option value="1200">20 分钟</option>
+      <option value="1800">30 分钟</option>
+      <option value="0">无限模式</option>
+      <option value="custom">自定义</option>
+    </select>
+  </div>
+
+  <div class="control">
+    <label for="customMinutes">自定义分钟</label>
+    <input id="customMinutes" type="number" min="0.1" step="0.1" value="15" disabled>
+  </div>
+
+  <div class="control">
+    <label for="fitMode">图片显示</label>
+    <select id="fitMode">
+      <option value="contain">完整显示</option>
+      <option value="cover">铺满画面</option>
+    </select>
+  </div>
+</section>
+
+<main class="stage">
+  <div class="image-wrap" id="imageWrap">
+    <a id="imageLink" href="#" target="_blank" rel="noopener" style="width:100%;height:100%;display:block">
+      <img id="flowerImage" alt="随机花卉参考图片">
+    </a>
+
+    <div id="status" class="status">正在连接在线花卉图库…</div>
+
+    <div class="timer">
+      <div>
+        <strong id="timeText">1:00</strong>
+        <span id="timeLabel">SECONDS</span>
+      </div>
+    </div>
+
+    <div class="progress" id="progress"></div>
+  </div>
+
+  <section class="info" id="infoPanel">
+    <div>
+      <h2 id="commonName">在线随机花卉</h2>
+      <p id="credit">Wikimedia Commons</p>
+      <div class="counter" id="counter"></div>
+    </div>
+
+    <div class="links">
+      <a class="linkbtn" id="sourceLink" href="#" target="_blank" rel="noopener">图片来源 ↗</a>
+      <a class="linkbtn" id="licenseLink" href="#" target="_blank" rel="noopener">授权资料 ↗</a>
+    </div>
+  </section>
+</main>
+
+<section class="actions">
+  <button class="btn primary" id="startBtn">开始</button>
+  <button class="btn" id="pauseBtn">暂停</button>
+  <button class="btn" id="resetBtn">重新计时</button>
+  <button class="btn" id="prevBtn">上一张</button>
+  <button class="btn" id="nextBtn">下一张</button>
+  <button class="btn" id="hideBtn">隐藏资料</button>
+  <button class="btn" id="fullBtn">全屏</button>
+</section>
+
+<div class="tip">空格：暂停/继续　←：上一张　→：下一张　R：重新计时　H：隐藏资料　F：全屏</div>
+</div>
+
+<script>
+const API = "https://commons.wikimedia.org/w/api.php";
+
+/* 使用多个宽泛花卉搜索词轮换，覆盖更多花种，同时避免长期集中在玫瑰等热门花卉。 */
+const SEARCH_QUERIES = [
+  "flower close up photograph",
+  "flower blossom macro photograph",
+  "garden flower bloom photograph",
+  "wildflower close up photograph",
+  "botanical garden flower photograph",
+  "spring flower macro photograph",
+  "summer flower bloom photograph",
+  "tropical flower close up photograph",
+  "Australian native flower photograph",
+  "alpine flower close up photograph",
+  "meadow flower macro photograph",
+  "ornamental flower close up photograph"
+];
+
+const $ = id => document.getElementById(id);
+const img = $("flowerImage");
+
+let pool = [];
+let usedThisSession = new Set();
+let failedUrls = new Set();
+let continueToken = null;
+let loading = false;
+let queryIndex = 0;
+let current = null;
+let timerId = null;
+let running = false;
+let total = 60;
+let remaining = 60;
+let preloadImage = null;
+
+/* 当前练习中的浏览历史，用于“上一张”。 */
+let sessionHistory = [];
+let historyPosition = -1;
+
+const HISTORY_KEY = "flowerLineRecentPagesV1";
+const MAX_HISTORY = 700;
+
+function loadHistory(){
+  try{
+    const data = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    return new Set(Array.isArray(data) ? data : []);
+  }catch{
+    return new Set();
+  }
+}
+
+let recentHistory = loadHistory();
+
+function saveHistory(page){
+  recentHistory.add(page);
+  const arr = Array.from(recentHistory);
+  const trimmed = arr.slice(Math.max(0, arr.length - MAX_HISTORY));
+  recentHistory = new Set(trimmed);
+  try{
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
+  }catch{}
+}
+
+function seconds(){
+  if($("duration").value === "custom"){
+    return Math.max(6, Math.round((Number($("customMinutes").value) || 15) * 60));
+  }
+  return Number($("duration").value);
+}
+
+function formatTime(sec){
+  if(sec === 0) return "∞";
+  return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`;
+}
+
+function updateClock(){
+  $("timeText").textContent = formatTime(remaining);
+  $("timeLabel").textContent = total === 0 ? "UNTIMED" : "SECONDS";
+  $("progress").style.transform =
+    total === 0 ? "scaleX(1)" : `scaleX(${Math.max(0, remaining / total)})`;
+}
+
+function pauseTimer(){
+  running = false;
+  clearInterval(timerId);
+}
+
+function resetTimer(startAfter = false){
+  pauseTimer();
+  total = seconds();
+  remaining = total;
+  updateClock();
+  if(startAfter) startTimer();
+}
+
+function startTimer(){
+  if(running) return;
+  total = seconds();
+
+  if(remaining <= 0 || remaining > total || total === 0){
+    remaining = total;
+  }
+
+  running = true;
+  clearInterval(timerId);
+
+  if(total === 0){
+    updateClock();
+    return;
+  }
+
+  timerId = setInterval(() => {
+    remaining--;
+    updateClock();
+
+    if(remaining <= 0){
+      clearInterval(timerId);
+      running = false;
+      nextFlower(true);
+    }
+  }, 1000);
+}
+
+function cleanText(html = ""){
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return (div.textContent || "").trim();
+}
+
+function normalizedTitle(title){
+  return (title || "")
+    .replace(/^File:/i, "")
+    .replace(/\.[^.]+$/, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
+}
+
+function isSuitable(page){
+  const info = page.imageinfo?.[0];
+  if(!info?.thumburl || !info?.descriptionurl) return false;
+
+  const mime = (info.mime || "").toLowerCase();
+  if(!["image/jpeg","image/png","image/webp"].includes(mime)) return false;
+
+  if((info.width || 0) < 1000 || (info.height || 0) < 750) return false;
+  if(failedUrls.has(info.thumburl)) return false;
+
+  const title = (page.title || "").toLowerCase();
+
+  /* 排除明显不是实拍花卉参考的内容。 */
+  const blocked =
+    /\b(map|logo|icon|diagram|stamp|coin|herbarium|specimen|drawing|painting|illustration|scan|poster|book|plate|seed|fruit|leaf only)\b/;
+
+  if(blocked.test(title)) return false;
+
+  return true;
+}
+
+async function fetchBatch(){
+  if(loading) return;
+  loading = true;
+
+  const query = SEARCH_QUERIES[queryIndex % SEARCH_QUERIES.length];
+
+  const params = new URLSearchParams({
+    action: "query",
+    generator: "search",
+    gsrsearch: `${query} filetype:bitmap`,
+    gsrnamespace: "6",
+    gsrlimit: "50",
+    prop: "imageinfo",
+    iiprop: "url|size|mime|extmetadata",
+    iiurlwidth: "1600",
+    format: "json",
+    origin: "*"
+  });
+
+  if(continueToken !== null){
+    params.set("gsroffset", continueToken);
+  }
+
+  try{
+    const response = await fetch(`${API}?${params.toString()}`);
+
+    if(!response.ok){
+      throw new Error("Wikimedia API request failed");
+    }
+
+    const data = await response.json();
+    const pages = Object.values(data.query?.pages || {}).filter(isSuitable);
+    const knownPages = new Set(pool.map(item => item.page));
+
+    for(const page of pages){
+      const info = page.imageinfo[0];
+      const metadata = info.extmetadata || {};
+
+      if(knownPages.has(info.descriptionurl)) continue;
+
+      pool.push({
+        title: normalizedTitle(page.title),
+        url: info.thumburl,
+        page: info.descriptionurl,
+        license: metadata.LicenseUrl?.value || info.descriptionurl,
+        artist: cleanText(metadata.Artist?.value || metadata.Credit?.value || ""),
+        width: info.width,
+        height: info.height
+      });
+
+      knownPages.add(info.descriptionurl);
+    }
+
+    continueToken = data.continue?.gsroffset ?? null;
+
+    /* 当前关键词搜索完后，自动换到另一个宽泛关键词。 */
+    if(continueToken === null){
+      queryIndex = (queryIndex + 1) % SEARCH_QUERIES.length;
+    }
+
+  }catch(error){
+    $("status").classList.remove("hidden");
+    $("status").innerHTML =
+      '<div><div class="error">暂时无法连接 Wikimedia Commons。</div><br>' +
+      '<button class="btn" onclick="retryLoading()">重新尝试</button></div>';
+  }finally{
+    loading = false;
+  }
+}
+
+function availableIndexes(includeRecent = false){
+  return pool
+    .map((item, index) => ({item, index}))
+    .filter(({item, index}) => {
+      if(usedThisSession.has(index)) return false;
+      if(!includeRecent && recentHistory.has(item.page)) return false;
+      return true;
+    })
+    .map(x => x.index);
+}
+
+async function ensureEnoughImages(){
+  let choices = availableIndexes(false);
+  let attempts = 0;
+
+  while(choices.length < 15 && attempts < 4){
+    await fetchBatch();
+    choices = availableIndexes(false);
+    attempts++;
+  }
+
+  /* 如果历史记录过滤后没有图片，允许使用较早看过、但本次尚未出现的图片。 */
+  if(!choices.length){
+    choices = availableIndexes(true);
+  }
+
+  return choices;
+}
+
+function preloadNext(){
+  const choices = availableIndexes(false);
+  if(!choices.length) return;
+
+  const item = pool[choices[Math.floor(Math.random() * choices.length)]];
+  preloadImage = new Image();
+  preloadImage.src = item.url;
+}
+
+function showFlower(item, autoStart = false, addToHistory = true){
+  current = item;
+  img.style.opacity = "0";
+
+  img.onload = () => {
+    $("status").classList.add("hidden");
+    img.style.opacity = "1";
+
+    saveHistory(current.page);
+    $("commonName").textContent = current.title || "随机花卉";
+    $("credit").textContent =
+      current.artist ? `摄影／上传者：${current.artist}` : "Wikimedia Commons";
+    $("counter").textContent =
+      `在线图库已载入 ${pool.length} 张 · 本次已看 ${usedThisSession.size} 张`;
+
+    $("imageLink").href = current.page;
+    $("sourceLink").href = current.page;
+    $("licenseLink").href = current.license;
+
+    $("prevBtn").disabled = historyPosition <= 0;
+    preloadNext();
+  };
+
+  img.onerror = async () => {
+    failedUrls.add(current.url);
+    $("status").classList.remove("hidden");
+    $("status").textContent = "这张图片无法载入，正在自动跳过…";
+    setTimeout(() => nextFlower(autoStart), 350);
+  };
+
+  img.src = current.url;
+
+  if(addToHistory){
+    if(historyPosition < sessionHistory.length - 1){
+      sessionHistory = sessionHistory.slice(0, historyPosition + 1);
+    }
+    sessionHistory.push(item);
+    historyPosition = sessionHistory.length - 1;
+  }
+
+  resetTimer(false);
+  if(autoStart) startTimer();
+}
+
+function previousFlower(){
+  if(historyPosition <= 0) return;
+  const wasRunning = running;
+  pauseTimer();
+  historyPosition--;
+  $("status").classList.remove("hidden");
+  $("status").textContent = "正在载入上一张花卉图片…";
+  showFlower(sessionHistory[historyPosition], wasRunning, false);
+}
+
+async function nextFlower(autoStart = false){
+  $("status").classList.remove("hidden");
+  $("status").textContent =
+    pool.length ? "正在载入下一张花卉图片…" : "正在搜索在线花卉图片…";
+
+  let choices = await ensureEnoughImages();
+
+  if(!choices.length){
+    usedThisSession.clear();
+    choices = availableIndexes(true);
+  }
+
+  if(!choices.length){
+    $("status").innerHTML =
+      '<div><div class="error">暂时没有取得可用图片。</div><br>' +
+      '<button class="btn" onclick="retryLoading()">重新搜索</button></div>';
+    return;
+  }
+
+  const selectedIndex = choices[Math.floor(Math.random() * choices.length)];
+  usedThisSession.add(selectedIndex);
+  showFlower(pool[selectedIndex], autoStart, true);
+
+  /* 库存不足时在后台继续拉取，不阻塞当前图片。 */
+  if(availableIndexes(false).length < 20){
+    fetchBatch();
+  }
+}
+
+async function retryLoading(){
+  $("status").classList.remove("hidden");
+  $("status").textContent = "正在重新连接在线图库…";
+  await fetchBatch();
+  nextFlower(false);
+}
+
+$("duration").addEventListener("change", () => {
+  $("customMinutes").disabled = $("duration").value !== "custom";
+  resetTimer(false);
+});
+
+$("customMinutes").addEventListener("change", () => resetTimer(false));
+
+$("fitMode").addEventListener("change", () => {
+  $("imageWrap").classList.toggle("cover", $("fitMode").value === "cover");
+});
+
+$("startBtn").onclick = startTimer;
+$("pauseBtn").onclick = pauseTimer;
+$("resetBtn").onclick = () => resetTimer(running);
+$("prevBtn").onclick = previousFlower;
+$("nextBtn").onclick = () => nextFlower(running);
+
+$("hideBtn").onclick = () => {
+  $("infoPanel").classList.toggle("hidden");
+  $("hideBtn").textContent =
+    $("infoPanel").classList.contains("hidden") ? "显示资料" : "隐藏资料";
+};
+
+$("fullBtn").onclick = async () => {
+  try{
+    if(!document.fullscreenElement){
+      await document.documentElement.requestFullscreen();
+    }else{
+      await document.exitFullscreen();
+    }
+  }catch{}
+};
+
+document.addEventListener("keydown", event => {
+  if(["INPUT","SELECT"].includes(document.activeElement.tagName)) return;
+
+  if(event.code === "Space"){
+    event.preventDefault();
+    running ? pauseTimer() : startTimer();
+  }
+
+  if(event.key === "ArrowLeft") previousFlower();
+  if(event.key === "ArrowRight") nextFlower(running);
+  if(event.key.toLowerCase() === "r") resetTimer(running);
+  if(event.key.toLowerCase() === "h") $("hideBtn").click();
+  if(event.key.toLowerCase() === "f") $("fullBtn").click();
+});
+
+window.addEventListener("online", () => {
+  if(!img.naturalWidth) retryLoading();
+});
+
+total = seconds();
+remaining = total;
+updateClock();
+$("prevBtn").disabled = true;
+nextFlower(false);
+</script>
+</body>
+</html>
